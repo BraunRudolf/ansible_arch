@@ -3,6 +3,8 @@
     name:
       - hyprland
       - kitty
+      - firefox
+      - xdg-utils
       - waybar
       - rofi-wayland
       - swww
