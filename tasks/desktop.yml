@@ -1,0 +1,36 @@
+- name: Install Hyprland Ecosystem
+  community.general.pacman:
+    name:
+      - hyprland
+      - kitty
+      - waybar
+      - rofi-wayland
+      - swww
+      - mako
+      - xdg-desktop-portal-hyprland
+      - xdg-desktop-portal-gtk
+      - qt5-wayland
+      - qt6-wayland
+      - polkit-kde-agent
+      - ttf-jetbrains-mono-nerd
+      - ttf-font-awesome
+    state: present
+
+- name: Install Audio Stack (PipeWire)
+  community.general.pacman:
+    name:
+      - pipewire
+      - pipewire-pulse
+      - wireplumber
+    state: present
+
+- name: Ensure config directories exist
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user_id }}/.config/{{ item }}"
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    mode: '0755'
+  loop:
+    - hypr
+    - kitty
+    - waybar

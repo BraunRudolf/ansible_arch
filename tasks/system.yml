@@ -1,0 +1,84 @@
+---
+- name Set Variables
+  set_fact:
+    limine_conf_path: "/boot/limine/limine.conf"
+
+- name: Optimize Pacman
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#ParallelDownloads'
+    line: 'ParallelDownloads = 10'
+
+- name: Install System Foundations
+  community.general.pacman:
+    name:
+      - base-devel
+      - linux-zen-headers
+      - git
+      - snapper
+      - snap-pac
+      - ufw
+      - iwd            # Modern wireless backend
+      - bluez
+      - bluez-utils
+    state: present
+
+- name: Install NVIDIA Graphics (Zen/DKMS)
+  community.general.pacman:
+    name:
+      - nvidia-dkms
+      - nvidia-utils
+      - libva-nvidia-driver
+      - nvidia-settings
+    state: present
+
+- name: Enable NVIDIA Early Modesetting in Limine
+  ansible.builtin.replace:
+    path: "{{ limine_conf_path }}"
+    # Regex logic: Find lines starting with 'cmdline:' that DON'T have the flag yet
+    regexp: '^(\s*cmdline: (?!.*nvidia_drm\.modeset=1).*)'
+    replace: '\1 nvidia_drm.modeset=1'
+
+- name: Configure Early KMS for NVIDIA in mkinitcpio
+  ansible.builtin.replace:
+    path: /etc/mkinitcpio.conf
+    regexp: '^MODULES=\((?!.*nvidia nvidia_modeset nvidia_uvm nvidia_drm).*\)'
+    replace: 'MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)'
+  register: mkinitcpio_config
+
+- name: Regenerate initramfs if config changed
+  ansible.builtin.command: mkinitcpio -P
+  when: mkinitcpio_config.changed
+
+- name: Configure NetworkManager to use iwd backend
+  ansible.builtin.copy:
+    dest: /etc/NetworkManager/conf.d/wifi_backend.conf
+    content: |
+      [device]
+      wifi.backend=iwd
+    mode: '0644'
+
+- name: Basic Firewall Setup (UFW)
+  block:
+    - name: Set default firewall policies
+      community.general.ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+    
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+
+- name: Enable and Start System Services
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - NetworkManager
+    - iwd
+    - bluetooth
+    - ufw

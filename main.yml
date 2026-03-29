@@ -1,0 +1,14 @@
+---
+- name: Complete Arch Workstation Deployment
+  hosts: local
+  become: true
+
+  tasks:
+    - name: Import System configurations
+      ansible.builtin.import_tasks: tasks/system.yml
+
+    - name: Import Desktop & GUI configurations
+      ansible.builtin.import_tasks: tasks/desktop.yml
+
+    - name: Import AUR & Third-party tools
+      ansible.builtin.import_tasks: tasks/aur.yml

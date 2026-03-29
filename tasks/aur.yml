@@ -1,0 +1,25 @@
+- name: Check if Paru is installed
+  ansible.builtin.command: which paru
+  register: paru_check
+  ignore_errors: true
+  become: false
+
+- name: Install Paru if missing
+  when: paru_check.rc != 0
+  block:
+    - name: Clone Paru-bin
+      ansible.builtin.git:
+        repo: https://aur.archlinux.org/paru-bin.git
+        dest: /tmp/paru-build
+      become: false
+
+    - name: Build Paru
+      ansible.builtin.command:
+        chdir: /tmp/paru-build
+        cmd: makepkg -si --noconfirm
+      become: false
+
+- name: Install AUR Packages via Paru
+  become: false
+  ansible.builtin.command:
+    cmd: paru -S --noconfirm visual-studio-code-bin discord
