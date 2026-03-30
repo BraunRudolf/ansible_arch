@@ -7,7 +7,7 @@
       - xdg-utils
       - waybar
       - npm
-      - rofi-wayland
+      - wofi
       - swww
       - mako
       - grim
