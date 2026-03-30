@@ -1,6 +1,7 @@
 - name: Install Hyprland Ecosystem
   community.general.pacman:
     name:
+      - zsh
       - hyprland
       - kitty
       - firefox
@@ -31,6 +32,12 @@
       - pipewire-pulse
       - wireplumber
     state: present
+
+- name: Set Zsh as the default shell
+  ansible.builtin.user:
+    name: "{{ username }}"
+    shell: /usr/bin/zsh
+  become: true
 
 - name: Ensure base .config directory exists
   ansible.builtin.file:
