@@ -1,0 +1,9 @@
+- name: Check if Zap plugin manager is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/.local/share/zap/zap.zsh"
+  register: zap_check
+
+- name: Install Zap plugin manager
+  ansible.builtin.shell:
+    cmd: "zsh <(curl -s https://raw.githubusercontent.com/zap-zsh/zap/master/install.zsh) --keep"
+  when: not zap_check.stat.exists

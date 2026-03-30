@@ -1,6 +1,7 @@
 - name: Install Hyprland Ecosystem
   community.general.pacman:
     name:
+      - starship
       - zsh
       - hyprland
       - kitty
@@ -24,6 +25,7 @@
       - ttf-jetbrains-mono-nerd
       - ttf-font-awesome
     state: present
+  become: true
 
 - name: Install Audio Stack (PipeWire)
   community.general.pacman:
@@ -32,6 +34,7 @@
       - pipewire-pulse
       - wireplumber
     state: present
+  become: true
 
 - name: Set Zsh as the default shell
   ansible.builtin.user:
@@ -46,4 +49,3 @@
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: '0755'
-  become: false

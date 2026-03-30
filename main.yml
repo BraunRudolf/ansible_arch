@@ -2,7 +2,6 @@
 - name: Complete Arch Workstation Deployment
   hosts: localhost
   connection: local
-  become: true
 
   vars:
     ansible_python_interpreter: /usr/bin/python
@@ -27,6 +26,9 @@
       
     - name: Import dotfiles and setup configs
       ansible.builtin.import_tasks: tasks/dotfiles.yml
+    - name: Install zap
+      ansible.builtin.import_tasks: tasks/zap.yml
+
 
   handlers:
     - name: Regenerate initramfs

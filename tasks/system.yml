@@ -10,6 +10,7 @@
   community.general.pacman:
     update_cache: true
     upgrade: true
+  become: true
 
 - name: Install System Foundations
   community.general.pacman:
@@ -28,6 +29,7 @@
       - bluez
       - bluez-utils
     state: present
+  become: true
 
 - name: Install NVIDIA Graphics (Zen/DKMS)
   community.general.pacman:
@@ -37,6 +39,7 @@
       - libva-nvidia-driver
       - nvidia-settings
     state: present
+  become: true
 
 - name: Enable NVIDIA Early Modesetting in Limine
   ansible.builtin.replace:
@@ -50,6 +53,7 @@
     path: /etc/mkinitcpio.conf.d
     state: directory
     mode: '0755'
+  become: true
 
 - name: Configure Early KMS and filesystem modules via drop-in
   ansible.builtin.copy:
@@ -59,6 +63,7 @@
       MODULES=(btrfs nvidia nvidia_modeset nvidia_uvm nvidia_drm)
     mode: '0644'
   notify: Regenerate initramfs
+  become: true
 
 - name: Configure NetworkManager to use iwd backend
   ansible.builtin.copy:
@@ -67,6 +72,7 @@
       [device]
       wifi.backend=iwd
     mode: '0644'
+  become: true
 
 - name: Basic Firewall Setup (UFW)
   block:
@@ -81,6 +87,7 @@
     - name: Enable UFW
       community.general.ufw:
         state: enabled
+  become: true    
 
 - name: Enable and Start System Services
   ansible.builtin.systemd_service:
