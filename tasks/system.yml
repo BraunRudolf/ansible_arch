@@ -1,24 +1,30 @@
 ---
-- name Set Variables
-  set_fact:
-    limine_conf_path: "/boot/limine/limine.conf"
-
-- name: Optimize Pacman
+- name: Enable ParallelDownloads
   ansible.builtin.lineinfile:
     path: /etc/pacman.conf
-    regexp: '^#ParallelDownloads'
-    line: 'ParallelDownloads = 10'
+    regexp: '^#?ParallelDownloads\s*='
+    line: 'ParallelDownloads = 5'
+    insertafter: '^#?\[options\]'
+
+- name: Perform a full system update (pacman -Syu)
+  community.general.pacman:
+    update_cache: true
+    upgrade: true
 
 - name: Install System Foundations
   community.general.pacman:
     name:
       - base-devel
+      - linux-zen
       - linux-zen-headers
+      - linux-lts
+      - linux-lts-headers
       - git
+      - rust
       - snapper
       - snap-pac
       - ufw
-      - iwd            # Modern wireless backend
+      - iwd
       - bluez
       - bluez-utils
     state: present
@@ -39,16 +45,20 @@
     regexp: '^(\s*cmdline: (?!.*nvidia_drm\.modeset=1).*)'
     replace: '\1 nvidia_drm.modeset=1'
 
-- name: Configure Early KMS for NVIDIA in mkinitcpio
-  ansible.builtin.replace:
-    path: /etc/mkinitcpio.conf
-    regexp: '^MODULES=\((?!.*nvidia nvidia_modeset nvidia_uvm nvidia_drm).*\)'
-    replace: 'MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)'
-  register: mkinitcpio_config
+- name: Ensure mkinitcpio drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/mkinitcpio.conf.d
+    state: directory
+    mode: '0755'
 
-- name: Regenerate initramfs if config changed
-  ansible.builtin.command: mkinitcpio -P
-  when: mkinitcpio_config.changed
+- name: Configure Early KMS and filesystem modules via drop-in
+  ansible.builtin.copy:
+    dest: /etc/mkinitcpio.conf.d/nvidia_btrfs.conf
+    content: |
+      # Ansible managed: Early KMS for NVIDIA and BTRFS support
+      MODULES=(btrfs nvidia nvidia_modeset nvidia_uvm nvidia_drm)
+    mode: '0644'
+  notify: Regenerate initramfs
 
 - name: Configure NetworkManager to use iwd backend
   ansible.builtin.copy:
@@ -79,6 +89,6 @@
     state: started
   loop:
     - NetworkManager
-    - iwd
     - bluetooth
     - ufw
+

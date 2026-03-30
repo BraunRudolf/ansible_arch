@@ -1,25 +1,39 @@
-- name: Check if Paru is installed
-  ansible.builtin.command: which paru
+- name: Check if Paru is installed and functional
+  ansible.builtin.command: paru --version
   register: paru_check
-  ignore_errors: true
+  changed_when: false
+  failed_when: false
   become: false
 
-- name: Install Paru if missing
+- name: Compile Paru from source (if missing or broken)
   when: paru_check.rc != 0
   block:
-    - name: Clone Paru-bin
+    - name: Clone Paru (Source)
       ansible.builtin.git:
-        repo: https://aur.archlinux.org/paru-bin.git
-        dest: /tmp/paru-build
+        repo: https://aur.archlinux.org/paru.git
+        dest: /tmp/paru-source
       become: false
 
-    - name: Build Paru
+    - name: Build Paru (Do not install)
       ansible.builtin.command:
-        chdir: /tmp/paru-build
-        cmd: makepkg -si --noconfirm
+        chdir: /tmp/paru-source
+        cmd: makepkg -sc --noconfirm
       become: false
 
-- name: Install AUR Packages via Paru
-  become: false
-  ansible.builtin.command:
-    cmd: paru -S --noconfirm visual-studio-code-bin discord
+    - name: Find the built Paru package
+      ansible.builtin.find:
+        paths: /tmp/paru-source
+        patterns: "paru-*.pkg.tar.zst"
+        excludes: "*-debug-*"
+      register: paru_pkg
+
+    - name: Install the built Paru package
+      ansible.builtin.command:
+        cmd: "pacman -U --noconfirm {{ paru_pkg.files[0].path }}"
+      become: true
+
+- name: Update all AUR packages (including Paru itself)
+  ansible.builtin.command: paru -Sua --noconfirm
+  register: paru_update
+  changed_when: "'there is nothing to do' not in paru_update.stdout"
+  become: true
