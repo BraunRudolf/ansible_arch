@@ -6,6 +6,7 @@
       - firefox
       - xdg-utils
       - waybar
+      - npm
       - rofi-wayland
       - swww
       - mako
@@ -31,13 +32,11 @@
       - wireplumber
     state: present
 
-- name: Ensure config directories exist
+- name: Ensure base .config directory exists
   ansible.builtin.file:
-    path: "/home/{{ ansible_facts['user_id'] }}/.config/{{ item }}"
+    path: "/home/{{ username }}/.config"
     state: directory
-    owner: "{{ ansible_facts['user_id'] }}"
+    owner: "{{ username }}"
+    group: "{{ username }}"
     mode: '0755'
-  loop:
-    - hypr
-    - kitty
-    - waybar
+  become: false
