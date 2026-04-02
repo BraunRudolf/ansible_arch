@@ -1,39 +1,48 @@
-- name: Check if Paru is installed and functional
-  ansible.builtin.command: paru --version
-  register: paru_check
-  changed_when: false
-  failed_when: false
-  become: false
+# - name: Check if Paru is installed and functional
+#   ansible.builtin.command: paru --version
+#   register: paru_check
+#   changed_when: false
+#   failed_when: false
+#   become: false
+#
+# - name: Compile Paru from source (if missing or broken)
+#   when: paru_check.rc != 0
+#   block:
+#     - name: Clone Paru (Source)
+#       ansible.builtin.git:
+#         repo: https://aur.archlinux.org/paru.git
+#         dest: /tmp/paru-source
+#       become: false
+#
+#     - name: Build Paru (Do not install)
+#       ansible.builtin.command:
+#         chdir: /tmp/paru-source
+#         cmd: makepkg -sc --noconfirm
+#       become: false
+#
+#     - name: Find the built Paru package
+#       ansible.builtin.find:
+#         paths: /tmp/paru-source
+#         patterns: "paru-*.pkg.tar.zst"
+#         excludes: "*-debug-*"
+#       register: paru_pkg
+#
+#     - name: Install the built Paru package
+#       ansible.builtin.command:
+#         cmd: "pacman -U --noconfirm {{ paru_pkg.files[0].path }}"
+#       become: true
 
-- name: Compile Paru from source (if missing or broken)
-  when: paru_check.rc != 0
-  block:
-    - name: Clone Paru (Source)
-      ansible.builtin.git:
-        repo: https://aur.archlinux.org/paru.git
-        dest: /tmp/paru-source
-      become: false
-
-    - name: Build Paru (Do not install)
-      ansible.builtin.command:
-        chdir: /tmp/paru-source
-        cmd: makepkg -sc --noconfirm
-      become: false
-
-    - name: Find the built Paru package
-      ansible.builtin.find:
-        paths: /tmp/paru-source
-        patterns: "paru-*.pkg.tar.zst"
-        excludes: "*-debug-*"
-      register: paru_pkg
-
-    - name: Install the built Paru package
-      ansible.builtin.command:
-        cmd: "pacman -U --noconfirm {{ paru_pkg.files[0].path }}"
-      become: true
+- name: Ensure Paru is installed
+  kewlfft.aur.aur:
+    name: paru
+    state: present
+  become: true
+  become_user: aur_builder
 
 - name: Update all AUR packages (including Paru itself)
-  ansible.builtin.command: paru -Sua --noconfirm
-  register: paru_update
-  changed_when: "'there is nothing to do' not in paru_update.stdout"
+  kewlfft.aur.aur:
+    upgrade: true
+    aur_only: true
+    use: paru
   become: true
+  become_user: aur_builder

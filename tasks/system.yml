@@ -15,7 +15,9 @@
 - name: Install System Foundations
   community.general.pacman:
     name:
+      - python-pexpect
       - base-devel
+      - acl
       - linux-zen
       - linux-zen-headers
       - linux-lts
@@ -31,6 +33,31 @@
     state: present
   become: true
 
+- name: Create the 'aur_builder' user for secure compiling
+  ansible.builtin.user:
+    name: aur_builder
+    create_home: true
+    group: wheel
+    system: true
+  become: true
+
+- name: Allow 'aur_builder' to run pacman without a password
+  ansible.builtin.copy:
+    content: "aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+    dest: /etc/sudoers.d/11-install-aur_builder
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  become: true
+
+- name: Install NVIDIA Graphics (Zen/DKMS)
+  community.general.pacman:
+    name:
+      - nvidia-dkms
+      - nvidia-utils
+      - libva-nvidia-driver
+      - nvidia-settings
+    state: present
+  become: true
 - name: Install NVIDIA Graphics (Zen/DKMS)
   community.general.pacman:
     name:
