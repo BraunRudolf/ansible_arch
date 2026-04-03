@@ -5,6 +5,7 @@
       - zsh
       - hyprland
       - kitty
+      - ghostty
       - firefox
       - xdg-utils
       - waybar

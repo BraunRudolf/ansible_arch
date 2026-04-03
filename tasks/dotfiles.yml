@@ -3,6 +3,7 @@
   community.general.pacman:
     name: stow
     state: present
+  become: true
 
 - name: Clone dotfiles repository
   ansible.builtin.git:

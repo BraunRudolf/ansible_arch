@@ -74,6 +74,7 @@
     # Regex logic: Find lines starting with 'cmdline:' that DON'T have the flag yet
     regexp: '^(\s*cmdline: (?!.*nvidia_drm\.modeset=1).*)'
     replace: '\1 nvidia_drm.modeset=1'
+  become: true
 
 - name: Ensure mkinitcpio drop-in directory exists
   ansible.builtin.file:
@@ -125,4 +126,5 @@
     - NetworkManager
     - bluetooth
     - ufw
+  become: true
 
